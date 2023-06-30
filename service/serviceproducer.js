@@ -60,7 +60,7 @@ function createServiceMixin (execlib, templateslib, lockingjoblib, mylib) {
     }
     return param;
   }
-  function monitorFunctioner (methodparams, res, state, index) {
+  function monitorFunctioner (methodparams, debugjob, res, state, index) {
     if (!state) {
       return res;
     }
@@ -80,7 +80,8 @@ function createServiceMixin (execlib, templateslib, lockingjoblib, mylib) {
           '\t}',
           '\treportchanger'+index+' = function ('+methodparams.map(reportChangerParamer).join(', ')+') {',
           '\t\tvar change = thelib.jobs.JOBCLASS.calculateChange.apply(null, arguments);',
-          "\t\tif (lib.isVal(change)) { console.log('setting change', change); this.set('"+state.name+"', change); }",
+          "debugger;",
+          "\t\tif (lib.isVal(change)) { "+(debugjob ? "console.log('setting change', change, 'on state name \""+state.name+"\"'); " : '')+"this.set('"+state.name+"', change); }",
           '\t}',
         );
         break;
@@ -108,14 +109,15 @@ function createServiceMixin (execlib, templateslib, lockingjoblib, mylib) {
     }
     return res;
   }
-  function promiseMonitors (states, methodparams) {
+  function promiseMonitors (states, methodparams, debugjob) {
     if (!lib.isArray(states)) {
       return '';
     }
     var varlines, funclines, ret;
     varlines = states.reduce(monitorVarer, []).join(', ');
-    funclines = states.reduce(monitorFunctioner.bind(null, methodparams), []).join('\n');
+    funclines = states.reduce(monitorFunctioner.bind(null, methodparams, debugjob), []).join('\n');
     methodparams = null;
+    debugjob = null;
     ret = [];
     if (varlines && funclines) {
       varlines = '\tvar '+varlines+';'
@@ -165,7 +167,7 @@ function createServiceMixin (execlib, templateslib, lockingjoblib, mylib) {
         "\t};"
       ].join('\n'),
       replacements: {
-        MONITORLINES: promiseMonitors(svcinvoc.states, methodparams),
+        MONITORLINES: promiseMonitors(svcinvoc.states, methodparams, debugjob),
         METHODNAME: methodname,
         METHODPARAMS: methodparams.join(', '),
         JOBCLASS: svcinvoc.jobclass,

@@ -43,6 +43,6 @@ describe('Test User2Hotel', function () {
   loadClientSide(['allex:libcloudexposure:lib']);
   //libTestIts('indata:ipmcloudexposure_ipmcommon:lib');
   //libTestIts('indata:ipmcloudexposure_individualhistory:lib');
-  //libTestIts('indata:ipmcloudexposure_compositedetail:lib');
-  libTestIts('indata:ipmcloudexposure_compositelookup:lib');
+  libTestIts('indata:ipmcloudexposure_compositedetail:lib');
+  //libTestIts('indata:ipmcloudexposure_compositelookup:lib');
 })

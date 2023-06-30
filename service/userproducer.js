@@ -80,7 +80,7 @@ function createUserMixin (execlib, templateslib, mylib) {
     return mixin;
   }
   function produceUserMixin (desc, targetservicename) {
-    var mixin = produceCtor(desc), visiblefields;
+    var mixin = produceCtor(desc);
     produceDtor(mixin, desc);
     (desc.services||[]).reduce(produceServiceMethods.bind(null, targetservicename), mixin);
     mylib.utils.produceAddMethods(mixin, desc, targetservicename);

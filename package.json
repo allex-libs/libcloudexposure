@@ -1,6 +1,6 @@
 {
   "name": "allex_libcloudexposurelib",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "AllexJS lib that generates the necessary glue code for exposing a lib via the Apartment/Hotel/Service chain",
   "main": "index.js",
   "scripts": {
