@@ -178,7 +178,12 @@ function createServiceMixin (execlib, templateslib, lockingjoblib, mylib) {
       }
     });
     totalbody = 'mixin.prototype[methodname] = (function (lib, qlib, lockingjoblib, thelib) {\n'+funcbody+'\n\treturn '+methodname+';\n})(lib, qlib, lockingjoblib, thelib);';
-    eval(totalbody);
+    try {
+      eval(totalbody);
+    } catch (e) {
+      console.error(totalbody);
+      throw e;
+    }
   }
   function produceServerMixinMethodForService (targetservicename, thelib, mixin, servicedesc) {
     var servicename = servicedesc.service;
