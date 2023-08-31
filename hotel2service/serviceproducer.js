@@ -29,24 +29,21 @@ function createServiceMixin (execlib, templateslib, mylib) {
     });
   }
 
+  //static on hotel service
+  function stateSetter(statename) {
+    console.log('hotel setting', statename, 'to', require('util').inspect(arguments[1], {depth:11}));
+    this.set.apply(this, arguments);
+  }
+  //endof static on hotel service
   function serviceMixinServiceStateMaterializer (listener) {
     var template = [
 
     ];
-    if (listener.debughotel) {
-      template.push(
-        "\ttaskRegistry.run('readState', {",
-        '\t\tstate: state,',
-        "\t\tname: 'STATEPROP',",
-        "\t\tcb: console.log.bind(console, 'hotel setting MYSTATENAME to')",
-        '\t});'
-      );
-    }
     template.push(
       "\ttaskRegistry.run('readState', {",
       '\t\tstate: state,',
       "\t\tname: 'STATEPROP',",
-      "\t\tcb: this.set.bind(this, 'MYSTATENAME')",
+      listener.debughotel? "\t\tcb: stateSetter.bind(this, 'MYSTATENAME')" : "\t\tcb: this.set.bind(this, 'MYSTATENAME')",
       '\t});'
     );
     return templateslib.process({

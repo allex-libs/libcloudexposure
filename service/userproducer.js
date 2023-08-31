@@ -30,16 +30,20 @@ function createUserMixin (execlib, templateslib, mylib) {
   function produceDtor (ctor, desc) {
     ctor.prototype.destroy = Function ();
   }
+  function visibleStateFiller(res, state) {
+    res = res || [];
+    var vfindex = res.indexOf(state.name);
+    if (vfindex<0) {
+      res.push(state.name);
+    }
+    return res;
+  }
 
   function produceMethod (mixin, methoddescs, methodname) {
     var methoddescarry, funcparams, params, svcinvoc, vfindex;
     svcinvoc = mylib.utils.serviceInvocationFromDescriptors(methoddescs);
-    if (svcinvoc && svcinvoc.state) {
-      mixin.visibleStateFields = mixin.visibleStateFields || [];
-      vfindex = mixin.visibleStateFields.indexOf(svcinvoc.state);
-      if (vfindex<0) {
-        mixin.visibleStateFields.push(svcinvoc.state);
-      }
+    if (svcinvoc && lib.isArray(svcinvoc.states)) {
+      mixin.visibleStateFields = svcinvoc.states.reduce(visibleStateFiller, mixin.visibleStateFields);
     }
     methoddescarry = mylib.utils.makeUpDescriptors(methoddescs);
     funcparams = methoddescarry.map(mylib.utils.parameterProducer);

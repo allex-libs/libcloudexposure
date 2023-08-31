@@ -95,13 +95,24 @@ function createServiceMixin (execlib, templateslib, lockingjoblib, mylib) {
     res.push(param);
     return res;
   }
-  function monitorInvoker (methodparams, res, state, index) {
+  //static on service
+  function historyBuilderProgresser (statename) {
+    console.log('historyBuild progress on', statename, arguments[1]);
+    this.set.apply(this, Array.prototype.slice.call(arguments));
+    console.log('after set,', statename, 'on state', this.state.data.get(statename));
+  }
+  //endof static on service
+  function monitorInvoker (methodparams, debugjob, res, state, index) {
     if (!state) {
       return res;
     }
     switch (state.type) {
       case 'historyBuilder':
-        res.push('new historybuilder'+index+"(promise).go().then(null, null, this.set.bind(this, '"+state.name+"'));");
+        if (debugjob) {
+          res.push('new historybuilder'+index+"(promise).go().then(null, null, historyBuilderProgresser.bind(this, '"+state.name+"'));");
+        } else {
+          res.push('new historybuilder'+index+"(promise).go().then(null, null, this.set.bind(this, '"+state.name+"'));");
+        }
         break;
       case 'reportChange':
         res.push('promise.then(reportchanger'+index+'.bind('+methodparams.reduce(reportChangerBinder,['this']).join(', ')+'));');
@@ -126,12 +137,13 @@ function createServiceMixin (execlib, templateslib, lockingjoblib, mylib) {
     }
     return ret.join('\n');
   }
-  function promiseMonitorInvocation (states, methodparams) {
+  function promiseMonitorInvocation (states, methodparams, debugjob) {
     if (!lib.isArray(states)) {
       return '';
     }
-    var invoclines = states.reduce(monitorInvoker.bind(null, methodparams), []).join('\n');
+    var invoclines = states.reduce(monitorInvoker.bind(null, methodparams, debugjob), []).join('\n');
     methodparams = null;
+    debugjob = null;
     return invoclines;
   }
   function debuggedOrNot (debugged, methodname) {
@@ -173,7 +185,7 @@ function createServiceMixin (execlib, templateslib, lockingjoblib, mylib) {
         JOBCLASS: svcinvoc.jobclass,
         JOBPARAMS: jobparams.join(', '),
         PROMISEPRODUCTIONLINE: 'var promise = '+jobinvocationbody+';',
-        PROMISEINVOCATIONLINES: promiseMonitorInvocation(svcinvoc.states, methodparams),
+        PROMISEINVOCATIONLINES: promiseMonitorInvocation(svcinvoc.states, methodparams, debugjob),
         RETURNLINE: debuggedOrNot(debugjob, methodname)
       }
     });
