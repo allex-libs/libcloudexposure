@@ -17,7 +17,7 @@ function createLevelBasedHistoryStage (lib, templateslib, arryopslib, mylib) {
     if (!evnt) {
       return;
     }
-    forlevelname = 'For Level '+evnt.forLevel;
+    forlevelname = evnt.forLevel;
     level = arryopslib.findElementWithProperty(this.levels, 'name', forlevelname);
     if (!level) {
       level = new HistoryStage({type: forlevelname, status: evnt.status, timestamp: evnt.timestamp});
