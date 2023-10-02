@@ -55,7 +55,7 @@ function createUtils (execlib, templateslib, arrayopslib, outerlib) {
     return lib.joinStringsWith(res, quoter('on'+servicedesc.service+'for'+mixinname), '\n\t\t,')
   }
   function produceAddMethodsMethods (desc) {
-    return reduceObj(desc, function (res, val, name) {
+    return lib.reduceShallow(desc, function (res, val, name) {
       return lib.joinStringsWith(res, quoter(name), '\n\t\t,');
     }, ' ');
   }
@@ -96,22 +96,6 @@ function createUtils (execlib, templateslib, arrayopslib, outerlib) {
     return lib.extend({}, hash, phash);
   }
   mylib.personalizedHash = personalizedHash;
-
-  function reducer (func, resobj, val, name) {
-    resobj.res = func(resobj.res, val, name);
-  }
-  function reduceObj (obj, func, seed) {
-    var resobj = {
-      res: seed
-    };
-    var _ro = resobj;
-    var _f = func;
-    lib.traverseShallow(obj, reducer.bind(null, _f, _ro));
-    _f = null;
-    _ro = null;
-    return resobj.res;
-  }
-  mylib.reduce = reduceObj;
 
   outerlib.utils = mylib;
 }
