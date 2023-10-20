@@ -8,17 +8,20 @@ function createHistoryBuilderJob (lib, templateslib, arryopslib, mylib) {
   function HistoryStage (evnt) {
     this.name = evnt.type;
     this.started = evnt.timestamp || Date.now();
+    this.data = evnt.data;
     this.ended = null;
     this.status = null;
-    this.setStatus(evnt);
+    this.updateFromEvent(evnt);
   }
   HistoryStage.prototype.destroy = function () {
     this.status = null;
     this.ended = null;
+    this.data = null;
     this.started = null;
     this.name= null;
   };
-  HistoryStage.prototype.setStatus = function (evnt) {
+  HistoryStage.prototype.updateFromEvent = function (evnt) {
+    this.data = evnt.data;
     if (!this.ended && evnt.status=='done') {
       this.status = 'done';
       this.ended = evnt.timestamp || Date.now();
@@ -27,7 +30,7 @@ function createHistoryBuilderJob (lib, templateslib, arryopslib, mylib) {
     this.status = 'running';
   };
   HistoryStage.prototype.add = function (evnt) {
-    this.setStatus(evnt);
+    this.updateFromEvent(evnt);
   };
   HistoryStage.prototype.endIfNotEnded = function (evnt) {
     if (!this.ended) {
