@@ -38,7 +38,7 @@ function createHistoryBuilderJob (lib, templateslib, arryopslib, mylib) {
   HistoryStage.prototype.toPlain = function () {
     return lib.pick(this, this.plainableFields);
   };
-  HistoryStage.prototype.plainableFields = ['name', 'status', 'started', 'ended'];
+  HistoryStage.prototype.plainableFields = ['name', 'status', 'started', 'ended', 'data'];
 
   function StageFactory (evnt) {
     return new HistoryStage(evnt);
