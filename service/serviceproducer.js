@@ -79,9 +79,11 @@ function createServiceMixin (execlib, templateslib, lockingjoblib, mylib) {
           "\t\tthrow new lib.Error('NO_CHANGECALCULATOR', 'Job JOBCLASS must have a static method named calculateChange');",
           '\t}',
           '\treportchanger'+index+' = function ('+methodparams.map(reportChangerParamer).join(', ')+') {',
-          '\t\tvar change = thelib.jobs.JOBCLASS.calculateChange.apply(null, arguments);',
-          "debugger;",
+          '\t\ttry{',
+          "\t\tvar args = Array.prototype.slice.call(arguments).concat([this.state.get('"+state.name+"')]);",
+          '\t\tvar change = thelib.jobs.JOBCLASS.calculateChange.apply(null, args);',
           "\t\tif (lib.isVal(change)) { "+(debugjob ? "console.log('setting change', change, 'on state name \""+state.name+"\"'); " : '')+"this.set('"+state.name+"', change); }",
+          '\t\t} catch (e) {console.error(e);}',
           '\t}',
         );
         break;
