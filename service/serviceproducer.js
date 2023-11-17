@@ -28,7 +28,7 @@ function createServiceMixin (execlib, templateslib, lockingjoblib, mylib) {
   function thiser (thingy) {
     return 'this.'+thingy;
   }
-  function jobInvocator (qdesc) {
+  function jobInvoker (qdesc) {
     if (!qdesc) {
       return 'job.go()';
     }
@@ -101,7 +101,7 @@ function createServiceMixin (execlib, templateslib, lockingjoblib, mylib) {
   function historyBuilderProgresser (statename) {
     console.log('historyBuild progress on', statename, arguments[1]);
     this.set.apply(this, Array.prototype.slice.call(arguments));
-    console.log('after set,', statename, 'on state', this.state.data.get(statename));
+    console.log('after set,', statename, 'on state', require('util').inspect(this.state.data.get(statename), {depth:11, colors:true}));
   }
   //endof static on service
   function monitorInvoker (methodparams, debugjob, res, state, index) {
@@ -117,7 +117,7 @@ function createServiceMixin (execlib, templateslib, lockingjoblib, mylib) {
         }
         break;
       case 'reportChange':
-        res.push('promise.then(reportchanger'+index+'.bind('+methodparams.reduce(reportChangerBinder,['this']).join(', ')+'));');
+        res.push((state.blockoriginalresult ? 'promiseresult = ': '')+'promise.then(reportchanger'+index+'.bind('+methodparams.reduce(reportChangerBinder,['this']).join(', ')+'));');
         break;
     }
     return res;
@@ -148,25 +148,22 @@ function createServiceMixin (execlib, templateslib, lockingjoblib, mylib) {
     debugjob = null;
     return invoclines;
   }
-  function debuggedOrNot (debugged, methodname) {
-    if (!debugged) {
-      return 'return promise;'
-    }
-    return "return qlib.promise2console(promise, '"+methodname+"');";
+  function promise2Defer (debugged, methodname) {
+    return 'qlib.promise2defer('+(debugged?'qlib.promise2console(':'')+'promiseresult||promise'+(debugged?')':'')+', defer);';
   }
   function produceServerMixinMethod (mixin, servicename, thelib, methoddescs, methodname) {
     var methoddescarry = mylib.utils.makeUpDescriptors(methoddescs);
     var funcparams = methoddescarry.map(mylib.utils.parameterProducer);
     var methodparams = funcparams.concat(['defer']);
     var svcinvoc = mylib.utils.serviceInvocationFromDescriptors(methoddescs);
-    var jobparams = svcinvoc ? (svcinvoc.servicefieldspre||[]).map(thiser).concat(methodparams) : methodparams;
+    var jobparams = svcinvoc ? (svcinvoc.servicefieldspre||[]).map(thiser).concat(funcparams) : funcparams;
     var jobinvocationbody, funcbody, totalbody;
     var debugjob = lib.isArray(methoddescarry) && methoddescarry.length>0 && methoddescarry[0].debugonservice;
     if (!(svcinvoc && svcinvoc.jobclass)) {
       throw new lib.JSONizingError('NO_JOBCLASS_IN_METHODDESCRIPTOR', methoddescs, 'must have a jobclass');
     }
     try {
-      jobinvocationbody = jobInvocator(svcinvoc.q);
+      jobinvocationbody = jobInvoker(svcinvoc.q);
     } catch (e) {
       throw new lib.JSONizingError(e.message, methoddescs, 'Invalid q descriptor');
     }
@@ -176,8 +173,9 @@ function createServiceMixin (execlib, templateslib, lockingjoblib, mylib) {
         '\tfunction METHODNAME (METHODPARAMS) {',
         '\t\tvar job = new thelib.jobs.JOBCLASS(JOBPARAMS);',
         "\t\tPROMISEPRODUCTIONLINE",
+        "\t\tPROMISERETURNERPRODUCTIONLINE",
         "\t\tPROMISEINVOCATIONLINES",
-        "\t\tRETURNLINE",
+        "\t\tLINKINGLINE",
         "\t};"
       ].join('\n'),
       replacements: {
@@ -187,8 +185,9 @@ function createServiceMixin (execlib, templateslib, lockingjoblib, mylib) {
         JOBCLASS: svcinvoc.jobclass,
         JOBPARAMS: jobparams.join(', '),
         PROMISEPRODUCTIONLINE: 'var promise = '+jobinvocationbody+';',
+        PROMISERETURNERPRODUCTIONLINE: 'var promiseresult;',
         PROMISEINVOCATIONLINES: promiseMonitorInvocation(svcinvoc.states, methodparams, debugjob),
-        RETURNLINE: debuggedOrNot(debugjob, methodname)
+        LINKINGLINE: promise2Defer(debugjob, methodname)
       }
     });
     totalbody = 'mixin.prototype[methodname] = (function (lib, qlib, lockingjoblib, thelib) {\n'+funcbody+'\n\treturn '+methodname+';\n})(lib, qlib, lockingjoblib, thelib);';
