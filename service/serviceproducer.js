@@ -50,6 +50,7 @@ function createServiceMixin (execlib, templateslib, lockingjoblib, mylib) {
         break;
         case 'reportChange':
           res.push('reportchanger'+index);
+          res.push('reportfailchanger'+index);
           break;
       }
     return res;
@@ -57,6 +58,12 @@ function createServiceMixin (execlib, templateslib, lockingjoblib, mylib) {
   function reportChangerParamer (param, index, arry) {
     if (index >= arry.length-1) {
       return 'res';
+    }
+    return param;
+  }
+  function reportFailChangerParamer (param, index, arry) {
+    if (index >= arry.length-1) {
+      return 'reason';
     }
     return param;
   }
@@ -80,11 +87,22 @@ function createServiceMixin (execlib, templateslib, lockingjoblib, mylib) {
           '\t}',
           '\treportchanger'+index+' = function ('+methodparams.map(reportChangerParamer).join(', ')+') {',
           '\t\ttry{',
-          "\t\tvar args = Array.prototype.slice.call(arguments).concat([this.state.get('"+state.name+"')]);",
-          '\t\tvar change = thelib.jobs.JOBCLASS.calculateChange.apply(null, args);',
-          "\t\tif (lib.isVal(change)) { "+(debugjob ? "console.log('setting change', change, 'on state name \""+state.name+"\"'); " : '')+"this.set('"+state.name+"', change); }",
+          "\t\t\tvar args = Array.prototype.slice.call(arguments).concat([this.state.get('"+state.name+"')]);",
+          '\t\t\tvar change = thelib.jobs.JOBCLASS.calculateChange.apply(thelib.jobs.JOBCLASS, args);',
+          "\t\t\tif (lib.isVal(change)) { "+(debugjob ? "console.log('setting change', change, 'on state name \""+state.name+"\"'); " : '')+"this.set('"+state.name+"', change); }",
           '\t\t} catch (e) {console.error(e);}',
+          '\t};',
+          '\tif (!lib.isFunction(thelib.jobs.JOBCLASS.calculateChangeOnFailure)) {',
+          '\t\treportfailchanger'+index+' = null',
           '\t}',
+          '\treportfailchanger'+index+' = function ('+methodparams.map(reportFailChangerParamer).join(', ')+') {',
+          '\t\ttry{',
+          "\t\t\tvar args = Array.prototype.slice.call(arguments).concat([this.state.get('"+state.name+"')]);",
+          '\t\t\tvar change = thelib.jobs.JOBCLASS.calculateChangeOnFailure.apply(thelib.jobs.JOBCLASS, args);',
+          "\t\t\tif (lib.isVal(change)) { "+(debugjob ? "console.log('setting change on failure', change, 'on state name \""+state.name+"\"'); " : '')+"this.set('"+state.name+"', change); }",
+          '\t\t} catch (e) {console.error(e);}',
+          '\t\tthrow args[args.length-2]',
+          '\t};'
         );
         break;
     }
@@ -99,9 +117,9 @@ function createServiceMixin (execlib, templateslib, lockingjoblib, mylib) {
   }
   //static on service
   function historyBuilderProgresser (statename) {
-    console.log('historyBuild progress on', statename, arguments[1]);
+    console.log('historyBuild progress on', statename, require('util').inspect(arguments[1], {depth:11}));
     this.set.apply(this, Array.prototype.slice.call(arguments));
-    console.log('after set,', statename, 'on state', require('util').inspect(this.state.data.get(statename), {depth:11, colors:true}));
+    console.log('after set,', statename, 'on state', require('util').inspect(this.state.data.get(statename), {depth:11}));
   }
   //endof static on service
   function monitorInvoker (methodparams, debugjob, res, state, index) {
@@ -117,7 +135,12 @@ function createServiceMixin (execlib, templateslib, lockingjoblib, mylib) {
         }
         break;
       case 'reportChange':
-        res.push((state.blockoriginalresult ? 'promiseresult = ': '')+'promise.then(reportchanger'+index+'.bind('+methodparams.reduce(reportChangerBinder,['this']).join(', ')+'));');
+        res.push(
+          (state.blockoriginalresult ? 'promiseresult = ': '')+'promise.then(',
+          'reportchanger'+index+'.bind('+methodparams.reduce(reportChangerBinder,['this']).join(', ')+'),',
+          'reportfailchanger'+index+' ? reportfailchanger'+index+'.bind('+methodparams.reduce(reportChangerBinder,['this']).join(', ')+') : null',
+          ');'
+        );
         break;
     }
     return res;
