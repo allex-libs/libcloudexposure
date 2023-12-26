@@ -92,17 +92,14 @@ function createServiceMixin (execlib, templateslib, lockingjoblib, mylib) {
           "\t\t\tif (lib.isVal(change)) { "+(debugjob ? "console.log('setting change', change, 'on state name \""+state.name+"\"'); " : '')+"this.set('"+state.name+"', change); }",
           '\t\t} catch (e) {console.error(e);}',
           '\t};',
-          '\tif (!lib.isFunction(thelib.jobs.JOBCLASS.calculateChangeOnFailure)) {',
-          '\t\treportfailchanger'+index+' = null',
-          '\t}',
-          '\treportfailchanger'+index+' = function ('+methodparams.map(reportFailChangerParamer).join(', ')+') {',
+          '\treportfailchanger'+index+' = lib.isFunction(thelib.jobs.JOBCLASS.calculateChangeOnFailure) ? function ('+methodparams.map(reportFailChangerParamer).join(', ')+') {',
           '\t\ttry{',
           "\t\t\tvar args = Array.prototype.slice.call(arguments).concat([this.state.get('"+state.name+"')]);",
           '\t\t\tvar change = thelib.jobs.JOBCLASS.calculateChangeOnFailure.apply(thelib.jobs.JOBCLASS, args);',
           "\t\t\tif (lib.isVal(change)) { "+(debugjob ? "console.log('setting change on failure', change, 'on state name \""+state.name+"\"'); " : '')+"this.set('"+state.name+"', change); }",
           '\t\t} catch (e) {console.error(e);}',
           '\t\tthrow args[args.length-2]',
-          '\t};'
+          '\t} : null;'
         );
         break;
     }
